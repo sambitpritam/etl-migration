@@ -1,21 +1,22 @@
 {
-    "AmazonOrderID": "AmazonOrderID",
-    "PurchaseDate": "PurchaseDate",
-    "LastUpdatedDate": "LastUpdatedDate",
-    "OrderStatus": "OrderStatus",
-    "SalesChannel": "SalesChannel",
-    "FulfillmentChannel": "FulfillmentData.FulfillmentChannel",
-    "ShipServiceLevel": "FulfillmentData.ShipServiceLevel",
-    "IsBusinessOrder": "IsBusinessOrder",
-    "OrderItemId": "OrderItem.AmazonOrderItemCode",
-    "ASIN": "OrderItem.ASIN",
-    "SellerSKU": "OrderItem.SKU",
-    "Title": "OrderItem.ProductName",
-    "Quantity": "OrderItem.Quantity",
-    "ItemStatus": "OrderItem.ItemStatus",
-    "ItemPrice": "OrderItem.ItemPrice",
-    "Promotion": "OrderItem.Promotion",
-    "imported_timestamp": "[getdate()]",
-    "filename": "[getfilename()]"
-
+    "MAN_GET_XML_ALL_ORDERS_DATA_BY_LAST_UPDATE_GENERAL": {
+        "AmazonOrderID": "AmazonOrderID",
+        "PurchaseDate": "PurchaseDate",
+        "LastUpdatedDate": "LastUpdatedDate",
+        "OrderStatus": "OrderStatus",
+        "SalesChannel": "SalesChannel",
+        "FulfillmentChannel": "FulfillmentData.FulfillmentChannel",
+        "ShipServiceLevel": "FulfillmentData.ShipServiceLevel",
+        "IsBusinessOrder": "IsBusinessOrder",
+        "OrderItemId": "OrderItem.AmazonOrderItemCode",
+        "ASIN": "OrderItem.ASIN",
+        "SellerSKU": "OrderItem.SKU",
+        "Title": "OrderItem.ProductName",
+        "Quantity": "OrderItem.Quantity",
+        "ItemStatus": "OrderItem.ItemStatus",
+        "ItemPrice": "OrderItem.ItemPrice",
+        "Promotion": "OrderItem.Promotion",
+        "imported_timestamp": "${getdate()}",
+        "filename": "${getfilename()}"
+    }
 }
