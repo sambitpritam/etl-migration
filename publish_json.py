@@ -16,12 +16,10 @@ class PublishJson:
         self.repeat_entries = 1
         pass
 
-
     def get_date(self):
         import pytz
         tz = pytz.timezone("Europe/Berlin")
-        return  datetime.datetime.now(tz).strftime("%d-%m-%Y %H:%M:%S")
-
+        return datetime.datetime.now(tz).strftime("%d-%m-%Y %H:%M:%S")
 
     def get_filename(self, file_path) -> str:
         return os.path.basename(file_path)
@@ -40,7 +38,8 @@ class PublishJson:
                 if len(matching_key) == 1:
                     key_map = json_data.get(matching_key[0])
                 elif len(matching_key) > 1:
-                    raise Exception(f"Multiple Keys available in 'json_key_mapping.json' with similar name '{filename}': {matching_key}")
+                    raise Exception(
+                        f"Multiple Keys available in 'json_key_mapping.json' with similar name '{filename}': {matching_key}")
                 else:
                     raise Exception(f"Key: {filename}, not available in 'json_key_mapping.json' file.")
 
@@ -55,18 +54,22 @@ class PublishJson:
         try:
             if "." in json_key:
                 jsn_key_list = json_key.split(".")
-                
+
                 for k in jsn_key_list:
                     if k in json_object.keys():
                         data = json_object.get(k)
                     elif isinstance(data, list):
-                        self.repeat_entries = len(data)
+                        if self.repeat_entries == 0:
+                            self.repeat_entries = len(data)
                         if k in data[order_item_indx].keys():
-                            data = data[order_item_indx].get(k)                        
+                            data = data[order_item_indx].get(k)
+                    elif isinstance(data, dict):
+                        if k in data.keys():
+                            data = data.get(k)
                     else:
                         data = None
-            elif  "${" in json_key:
-                method_name = json_key.replace("$","").replace("{","").replace("}","").replace("()","")
+            elif "${" in json_key:
+                method_name = json_key.replace("$", "").replace("{", "").replace("}", "").replace("()", "")
 
                 if method_name == "getdate":
                     data = self.get_date()
@@ -79,7 +82,7 @@ class PublishJson:
                     data = None
 
             if isinstance(data, str):
-                value = data.encode("utf-8")
+                value = str(data)
             elif isinstance(data, dict):
                 value = json.dumps(data).encode("utf-8")
 
@@ -93,14 +96,13 @@ class PublishJson:
         :param json_file: Path to the json file that needs to be extracted.
         """
         df_data = pd.DataFrame()
-        json_data = dict()
         tmp_data = dict()
         key_mapping = self.get_key_mapping(self.get_filename(json_file))
 
         try:
             with open(json_file, encoding="utf-8") as jsn:
                 json_data = json.load(jsn)
-            
+
             if len(json_data) > 0:
                 order_list = json_data["AmazonEnvelope"]["Message"]
 
@@ -108,14 +110,23 @@ class PublishJson:
                     self.repeat_entries = 0
                     for k in key_mapping.keys():
                         if k in tmp_data.keys():
-                            tmp_data[k].append(self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k), file_path=json_file))
+                            tmp_data[k].append(
+                                self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                                    file_path=json_file))
                             if self.repeat_entries > 1:
                                 for i in range(1, self.repeat_entries):
-                                    tmp_data[k].append(self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k), file_path=json_file, order_item_indx=i))
-
+                                    for k in key_mapping.keys():
+                                        tmp_data[k].append(
+                                            self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                                                file_path=json_file, order_item_indx=i))
+                                self.repeat_entries = -1
                         else:
-                            tmp_data[k] = [self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k), file_path=json_file)]
-            
+                            tmp_data[k] = [
+                                self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                                    file_path=json_file)]
+
+            for k in tmp_data.keys():
+                print(f"Length of {k} of type {type(tmp_data.get(k))}: {len(tmp_data.get(k))}")
             df_data = pd.DataFrame(tmp_data)
 
         except Exception as e:
@@ -123,18 +134,19 @@ class PublishJson:
 
         return df_data
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     pj = PublishJson()
+
+    # add the path to input json, need to test if this can be read from s3, else we can download the file from S3 to temp location and read from there
     filepath = "./input_files/MAN_GET_XML_ALL_ORDERS_DATA_BY_LAST_UPDATE_GENERAL_20220216_174419068412.json"
 
     # add below value to .env file
     # MAPPING_CONFIG_FILE_PATH="./config/json_key_mapping.json"
-    
+
     data = pj.extract_json_data(filepath)
     print(data.describe)
-    data.to_csv("./input_files/output.csv",index= False)
-    # print(pj.get_date())
-    # data = "${getfilename()}"
-    # method_name = data.replace("$","").replace("{","").replace("}","").replace("()","")
-    # print(method_name)
+
+    # Read below file in Notepad++, for some reason reading the below CSV file in excel is unable convert the unicode character
+    data.to_csv("./input_files/output.csv", index=False, encoding="utf-8")
+
