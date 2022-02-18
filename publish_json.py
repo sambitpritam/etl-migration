@@ -24,6 +24,16 @@ class PublishJson:
     def get_filename(self, file_path) -> str:
         return os.path.basename(file_path)
 
+    def apply_data_type(self, data, data_type):
+        result = None
+        if data_type.lower() == "date":
+            result = datetime.datetime.strptime(data, "%Y-%m-%dT%H:%M:%S+00:00").strftime("%d-%m-%Y")
+        elif data_type.lower() == "varchar":
+            result = data
+        else:
+            raise Exception(f"Un-supported DataType: {data_type}")
+        return result
+
     def get_key_mapping(self, filename):
         """fetch key mapping from config mapping files.
         :param filename: Filename whose mapping configurations should be refered to 
@@ -48,9 +58,17 @@ class PublishJson:
 
         return key_map
 
-    def get_json_value(self, json_object: json, json_key: str, file_path: str, order_item_indx=0) -> str:
+    def get_json_value(self, json_object: json, json_key_value: str, file_path: str, order_item_indx=0) -> str:
         value = str()
         data = None
+
+        if ":" in json_key_value:
+            data_type = json_key_value.split(":")[1]
+            json_key = json_key_value.split(":")[0]
+        else:
+            data_type = "varchar"
+            json_key = json_key_value
+
         try:
             if "." in json_key:
                 jsn_key_list = json_key.split(".")
@@ -82,9 +100,10 @@ class PublishJson:
                     data = None
 
             if isinstance(data, str):
-                value = str(data)
+                # value = str(data)
+                value = self.apply_data_type(data, data_type)
             elif isinstance(data, dict):
-                value = json.dumps(data).encode("utf-8")
+                value = json.dumps(data)
 
         except Exception as e:
             self.log.error(f"get_json_value Exception Ocurred: {e}")
@@ -111,22 +130,22 @@ class PublishJson:
                     for k in key_mapping.keys():
                         if k in tmp_data.keys():
                             tmp_data[k].append(
-                                self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                self.get_json_value(json_object=order.get("Order"), json_key_value=key_mapping.get(k),
                                                     file_path=json_file))
                             if self.repeat_entries > 1:
                                 for i in range(1, self.repeat_entries):
                                     for k in key_mapping.keys():
                                         tmp_data[k].append(
-                                            self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                            self.get_json_value(json_object=order.get("Order"), json_key_value=key_mapping.get(k),
                                                                 file_path=json_file, order_item_indx=i))
                                 self.repeat_entries = -1
                         else:
                             tmp_data[k] = [
-                                self.get_json_value(json_object=order.get("Order"), json_key=key_mapping.get(k),
+                                self.get_json_value(json_object=order.get("Order"), json_key_value=key_mapping.get(k),
                                                     file_path=json_file)]
 
-            for k in tmp_data.keys():
-                print(f"Length of {k} of type {type(tmp_data.get(k))}: {len(tmp_data.get(k))}")
+            # for k in tmp_data.keys():
+            #     print(f"Length of {k} of type {type(tmp_data.get(k))}: {len(tmp_data.get(k))}")
             df_data = pd.DataFrame(tmp_data)
 
         except Exception as e:
@@ -139,7 +158,7 @@ if __name__ == "__main__":
     pj = PublishJson()
 
     # add the path to input json, need to test if this can be read from s3, else we can download the file from S3 to temp location and read from there
-    filepath = "./input_files/MAN_GET_XML_ALL_ORDERS_DATA_BY_LAST_UPDATE_GENERAL_20220216_174419068412.json"
+    filepath = "./tmp/input_files/MAN_GET_XML_ALL_ORDERS_DATA_BY_LAST_UPDATE_GENERAL_20220216_174419068412.json"
 
     # add below value to .env file
     # MAPPING_CONFIG_FILE_PATH="./config/json_key_mapping.json"
@@ -148,5 +167,5 @@ if __name__ == "__main__":
     print(data.describe)
 
     # Read below file in Notepad++, for some reason reading the below CSV file in excel is unable convert the unicode character
-    data.to_csv("./input_files/output.csv", index=False, encoding="utf-8")
+    data.to_csv("./tmp/input_files/output.csv", index=False, encoding="utf-8")
 

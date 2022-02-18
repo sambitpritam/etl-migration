@@ -1,11 +1,11 @@
 {
     "MAN_GET_XML_ALL_ORDERS_DATA_BY_LAST_UPDATE_GENERAL": {
-        "AmazonOrderID": "AmazonOrderID",
-        "PurchaseDate": "PurchaseDate",
-        "LastUpdatedDate": "LastUpdatedDate",
-        "OrderStatus": "OrderStatus",
-        "SalesChannel": "SalesChannel",
-        "FulfillmentChannel": "FulfillmentData.FulfillmentChannel",
+        "AmazonOrderID": "AmazonOrderID:varchar",
+        "PurchaseDate": "PurchaseDate:date",
+        "LastUpdatedDate": "LastUpdatedDate:date",
+        "OrderStatus": "OrderStatus:varchar",
+        "SalesChannel": "SalesChannel:varchar",
+        "FulfillmentChannel": "FulfillmentData.FulfillmentChannel:varchar",
         "ShipServiceLevel": "FulfillmentData.ShipServiceLevel",
         "IsBusinessOrder": "IsBusinessOrder",
         "OrderItemId": "OrderItem.AmazonOrderItemCode",
@@ -17,6 +17,6 @@
         "ItemPrice": "OrderItem.ItemPrice",
         "Promotion": "OrderItem.Promotion",
         "imported_timestamp": "${getdate()}",
-        "filename": "${getfilename()}"
+        "filename": "${getfilename()}:varchar"
     }
 }
